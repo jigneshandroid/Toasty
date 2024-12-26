@@ -21,8 +21,8 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.Surface
 import android.widget.Toast
-import com.example.toasty.security.ScreenRecordingActivity.Companion.mediaProjectionManager
-import com.example.toasty.security.ScreenRecordingActivity.Companion.recordScreen
+import com.example.toasty.security.FirebaseDataActivity.Companion.mediaProjectionManager
+import com.example.toasty.security.FirebaseDataActivity.Companion.recordScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,7 +58,7 @@ class ScreenRecordingService : Service() {
         val data = intent?.getParcelableExtra<Intent>("DATA")
 
         mediaProjection =
-            ScreenRecordingActivity.mediaProjectionManager.getMediaProjection(resultCode, data!!)
+            mediaProjectionManager.getMediaProjection(resultCode, data!!)
         if (recordScreen) {
             // start screen recording
             CoroutineScope(Dispatchers.IO).launch {
