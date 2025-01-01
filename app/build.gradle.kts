@@ -66,6 +66,7 @@ dependencies {
     implementation(project(":Toasty"))
     implementation(libs.androidx.appcompat)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
