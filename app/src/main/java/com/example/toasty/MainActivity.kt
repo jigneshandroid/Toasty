@@ -12,49 +12,34 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.toasty.security.FirebaseData
+import com.example.toasty.security.FirebaseData.Companion
 import com.example.toasty.security.LocationMap
 import com.example.toasty.ui.theme.ToastyTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.max
 
 
 class MainActivity : ComponentActivity() {
 
-     private val TAG: String = "ToastyMainActivity"
+    private val TAG: String = "ToastyMainActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,100 +48,108 @@ class MainActivity : ComponentActivity() {
             PermissionHandler()
         }
 
-        FirebaseData.onInit(this@MainActivity)
+
     }
 
-/*    @Composable
-    fun MyComposable() {
-        val isLoading = remember { mutableStateOf(false) }
-        val data = remember { mutableStateOf(listOf<String>()) }
+    /*    @Composable
+        fun MyComposable() {
+            val isLoading = remember { mutableStateOf(false) }
+            val data = remember { mutableStateOf(listOf<String>()) }
 
-        // Define a LaunchedEffect to perform a long-running operation asynchronously
-        // `LaunchedEffect` will cancel and re-launch if
-        // `isLoading.value` changes
-        LaunchedEffect(isLoading.value) {
-            if (isLoading.value) {
-                // Perform a long-running operation, such as fetching data from a network
-                val newData = fetchData()
-                // Update the state with the new data
-                data.value = newData
-                isLoading.value = false
+            // Define a LaunchedEffect to perform a long-running operation asynchronously
+            // `LaunchedEffect` will cancel and re-launch if
+            // `isLoading.value` changes
+            LaunchedEffect(isLoading.value) {
+                if (isLoading.value) {
+                    // Perform a long-running operation, such as fetching data from a network
+                    val newData = fetchData()
+                    // Update the state with the new data
+                    data.value = newData
+                    isLoading.value = false
+                }
             }
-        }
 
-        Column {
-            Button(onClick = { isLoading.value = true }) {
-                Text("Fetch Data")
-            }
-            if (isLoading.value) {
-                // Show a loading indicator
-                CircularProgressIndicator()
-            } else {
-                // Show the data
-                LazyColumn {
-                    items(data.value.size) { index ->
-                        Text(text = data.value[index])
+            Column {
+                Button(onClick = { isLoading.value = true }) {
+                    Text("Fetch Data")
+                }
+                if (isLoading.value) {
+                    // Show a loading indicator
+                    CircularProgressIndicator()
+                } else {
+                    // Show the data
+                    LazyColumn {
+                        items(data.value.size) { index ->
+                            Text(text = data.value[index])
+                        }
                     }
                 }
             }
         }
-    }
 
-    @Composable
-    fun TimerScreen() {
-        val elapsedTime = remember { mutableIntStateOf(0) }
+        @Composable
+        fun TimerScreen() {
+            val elapsedTime = remember { mutableIntStateOf(0) }
 
-        DisposableEffect(Unit) {
-            val scope = CoroutineScope(Dispatchers.Default)
-            val job = scope.launch {
-                while (true) {
-                    delay(1000)
-                    elapsedTime.value += 1
-                    Log.d(TAG,"Timer is still working ${elapsedTime.value}")
+            DisposableEffect(Unit) {
+                val scope = CoroutineScope(Dispatchers.Default)
+                val job = scope.launch {
+                    while (true) {
+                        delay(1000)
+                        elapsedTime.value += 1
+                        Log.d(TAG,"Timer is still working ${elapsedTime.value}")
+                    }
+                }
+
+                onDispose {
+                    job.cancel()
                 }
             }
 
-            onDispose {
-                job.cancel()
-            }
+            Text(
+                text = "Elapsed Time: ${elapsedTime.value}",
+                modifier = Modifier.padding(16.dp),
+                fontSize = 24.sp
+            )
         }
-
-        Text(
-            text = "Elapsed Time: ${elapsedTime.value}",
-            modifier = Modifier.padding(16.dp),
-            fontSize = 24.sp
-        )
-    }
-    // Simulate a network call by suspending the coroutine for 2 seconds
-    private suspend fun fetchData(): List<String> {
-        // Simulate a network delay
-        delay(2000)
-        return listOf("Item 1", "Item 2", "Item 3", "Item 4", "Item 5",)
-    }*/
+        // Simulate a network call by suspending the coroutine for 2 seconds
+        private suspend fun fetchData(): List<String> {
+            // Simulate a network delay
+            delay(2000)
+            return listOf("Item 1", "Item 2", "Item 3", "Item 4", "Item 5",)
+        }*/
 
     @Composable
     fun PermissionHandler() {
-        val context = LocalContext.current
+        //val context = LocalContext.current
+
         val multiplePermissionsLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
+            val isAllPermissionGranted = permissions.containsValue(false)
+            Log.d(TAG, "PermissionHandler call isAllPermissionGranted: $isAllPermissionGranted")
+            if (!isAllPermissionGranted) {
+                FirebaseData.onInit(this@MainActivity)
+            }
             permissions.forEach { (permission, isGranted) ->
-                if (isGranted) {
-                    Toast.makeText(context, "$permission Granted", Toast.LENGTH_SHORT).show()
-                    LocationMap.onInit(this)
+                Log.d(TAG, "PermissionHandler call $permission: $isGranted")
+                /*if (isGranted) {
+                    Toast.makeText(this@MainActivity, "$permission Granted", Toast.LENGTH_SHORT)
+                        .show()
                 } else {
-                    Toast.makeText(context, "$permission Denied", Toast.LENGTH_SHORT).show()
-                }
+                    Toast.makeText(this@MainActivity, "$permission Denied", Toast.LENGTH_SHORT)
+                        .show()
+                }*/
             }
         }
-        LaunchedEffect(Unit) {
+
+        SideEffect {
             // Remember a launcher for requesting permissions
             multiplePermissionsLauncher.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.RECORD_AUDIO,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    Manifest.permission.RECORD_AUDIO
                 )
             )
         }
@@ -270,6 +263,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        LocationMap.removeLocationUpdate()
     }
 
 }

