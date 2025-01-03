@@ -13,9 +13,9 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 
-class LocationMap {
+object LocationMap {
 
-    companion object {
+
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
         private const val TAG: String = "LocationMap"
         private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -97,5 +97,5 @@ class LocationMap {
                 )
             }
         }
-    }
+
 }

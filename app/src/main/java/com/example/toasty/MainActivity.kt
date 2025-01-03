@@ -31,7 +31,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.toasty.security.FirebaseData
-import com.example.toasty.security.FirebaseData.Companion
 import com.example.toasty.security.LocationMap
 import com.example.toasty.ui.theme.ToastyTheme
 import kotlin.math.max
@@ -149,7 +148,9 @@ class MainActivity : ComponentActivity() {
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.RECORD_AUDIO
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
             )
         }

