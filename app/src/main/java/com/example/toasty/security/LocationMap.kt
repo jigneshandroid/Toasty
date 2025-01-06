@@ -1,11 +1,15 @@
 package com.example.toasty.security
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -15,87 +19,29 @@ import com.google.android.gms.location.Priority
 
 object LocationMap {
 
+    private const val TAG: String = "LocationMap"
 
-        private const val LOCATION_PERMISSION_REQUEST_CODE = 1
-        private const val TAG: String = "LocationMap"
-        private lateinit var fusedLocationClient: FusedLocationProviderClient
-        private lateinit var locationRequest: LocationRequest
-        private lateinit var locationCallback: LocationCallback
-        private var lastLatLong: String? = null
+    val locations = MutableLiveData<List<String>>()
 
-        fun onInit(activity: Activity) {
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
+    @SuppressLint("QueryPermissionsNeeded", "WrongConstant")
+    fun showLocationOnExternalMap(activity: Activity, locations: List<String>) {
+        if (locations.isEmpty()) return
 
-            // Create location request
-            locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
-                .setMinUpdateIntervalMillis(3000L) // Minimum interval for updates
-                .build()
+        // Create a route query by concatenating the locations
+        val route = locations.joinToString(separator = "/")
+        val mapUri = Uri.parse("https://www.google.com/maps/dir/$route")
+        //val geoUri = Uri.parse("geo:22.3196986,73.1690153")
+        //val uri = Uri.parse("http://maps.google.com/maps?daddr=37.7749,-122.4194")
+        // Open the map with the intent
+        val mapIntent = Intent(Intent.ACTION_VIEW, mapUri)
+        //mapIntent.setPackage("com.google.android.apps.maps")
+        //mapIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        val activityInfo = mapIntent.resolveActivityInfo(activity.packageManager, mapIntent.flags)
+        activity.startActivity(mapIntent)
+        if (activityInfo?.exported != null) {
 
-            // Create location callback
-            locationCallback = object : LocationCallback() {
-                override fun onLocationResult(locationResult: LocationResult) {
-                    super.onLocationResult(locationResult)
-                    val location = locationResult.lastLocation
-                    if (location != null) {
-                        // Handle the location update
-                        Log.d(TAG, "Location: ${location.latitude}, ${location.longitude}")
-                        val currentLatLong = "${location.latitude},${location.longitude}"
-                        if (currentLatLong != lastLatLong) {
-                            lastLatLong = currentLatLong
-                            FirebaseData.saveLocationToDatabase(currentLatLong)
-                        }
-                    }
-                }
-            }
-
-            fetchLocation(activity)
+        } else {
+            Log.d(TAG, "No app found to handle the map intent.")
         }
-
-        fun removeLocationUpdate() {
-            // Stop location updates to avoid memory leaks
-            if(::fusedLocationClient.isInitialized) {
-                fusedLocationClient.removeLocationUpdates(locationCallback)
-            }
-        }
-
-        private fun fetchLocation(activity: Activity) {
-            // Check permissions and fetch location
-            if (ActivityCompat.checkSelfPermission(
-                    activity,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                fusedLocationClient.requestLocationUpdates(
-                    locationRequest,
-                    locationCallback,
-                    Looper.getMainLooper()
-                )
-                /*              fusedLocationClient.lastLocation
-                                  .addOnSuccessListener { location ->
-                                      if (location != null) {
-                                          val latitude = location.latitude
-                                          val longitude = location.longitude
-                                          FirebaseData.saveLocationToDatabase(latitude.toString(), longitude.toString())
-                                          *//*Toast.makeText(
-                                activity,
-                                "Location: ($latitude, $longitude)",
-                                Toast.LENGTH_LONG
-                            ).show()*//*
-                        } else {
-                            Toast.makeText(activity, "Unable to fetch location.", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    .addOnFailureListener {
-                        Toast.makeText(activity, "Failed to fetch location: ${it.message}", Toast.LENGTH_SHORT).show()
-                    }*/
-            } else {
-                // Request location permissions
-                ActivityCompat.requestPermissions(
-                    activity,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    LOCATION_PERMISSION_REQUEST_CODE
-                )
-            }
-        }
-
+    }
 }

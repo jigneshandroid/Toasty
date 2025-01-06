@@ -1,17 +1,25 @@
 package com.example.toasty
 
 import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,15 +39,53 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.toasty.security.FirebaseData
 import com.example.toasty.security.LocationMap
+import com.example.toasty.security.LocationMapService
 import com.example.toasty.ui.theme.ToastyTheme
 import kotlin.math.max
 
 
 class MainActivity : ComponentActivity() {
 
-    private val TAG: String = "ToastyMainActivity"
+
+    companion object {
+        private const val PERMISSION_REQUEST_CODE = 100
+        private val TAG: String = "ToastyMainActivity"
+        // Permissions to request
+        private val permissions = listOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.RECORD_AUDIO
+        )
+    }
+
+    private val manageStoragePermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            checkManageExternalStoragePermission()
+        }
+
+    private val multiplePermissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        permissions.forEach { (permission, isGranted) ->
+            Log.d(TAG, "PermissionHandler call $permission: $isGranted")
+            if (isGranted) {
+                Log.d(TAG,"$permission Granted")
+            } else {
+                Log.d(TAG,"$permission Denied")
+            }
+        }
+   /*     val isAllPermissionGranted = permissions.containsValue(false)
+        Log.d(TAG, "PermissionHandler call isAllPermissionGranted: $isAllPermissionGranted")
+        if (!isAllPermissionGranted) {
+            FirebaseData.onInit(this@MainActivity)
+        }*/
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -121,38 +168,23 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun PermissionHandler() {
         //val context = LocalContext.current
-
-        val multiplePermissionsLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            val isAllPermissionGranted = permissions.containsValue(false)
-            Log.d(TAG, "PermissionHandler call isAllPermissionGranted: $isAllPermissionGranted")
-            if (!isAllPermissionGranted) {
-                FirebaseData.onInit(this@MainActivity)
-            }
-            permissions.forEach { (permission, isGranted) ->
-                Log.d(TAG, "PermissionHandler call $permission: $isGranted")
-                /*if (isGranted) {
-                    Toast.makeText(this@MainActivity, "$permission Granted", Toast.LENGTH_SHORT)
-                        .show()
-                } else {
-                    Toast.makeText(this@MainActivity, "$permission Denied", Toast.LENGTH_SHORT)
-                        .show()
-                }*/
-            }
-        }
-
         SideEffect {
             // Remember a launcher for requesting permissions
-            multiplePermissionsLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.RECORD_AUDIO,
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-            )
+            val permissionsToRequest = permissions.filter {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+
+            if (permissionsToRequest.isNotEmpty()) {
+                // Request only the permissions that are not granted
+                multiplePermissionsLauncher.launch(permissionsToRequest.toTypedArray())
+            } else {
+                Log.d(TAG,"All permissions already granted")
+            }
+
+            // Check and request MANAGE_EXTERNAL_STORAGE permission
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                checkAndRequestManageExternalStoragePermission()
+            }
         }
         ToastyTheme {
             Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -160,18 +192,58 @@ class MainActivity : ComponentActivity() {
                     name = "Android",
                     modifier = Modifier.padding(innerPadding)
                 )
-                lazyGridWithBitmaps(modifier = Modifier.padding(innerPadding))
 
+                //lazyGridWithBitmaps(modifier = Modifier.padding(innerPadding))
+
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun checkAndRequestManageExternalStoragePermission() {
+        if (!isManageExternalStoragePermissionGranted()) {
+            // Launch the settings screen for MANAGE_EXTERNAL_STORAGE
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            manageStoragePermissionLauncher.launch(intent)
+        } else {
+            FirebaseData.onInit(this@MainActivity)
+            Log.d(TAG,"MANAGE_EXTERNAL_STORAGE permission already granted")
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun isManageExternalStoragePermissionGranted(): Boolean {
+        return Environment.isExternalStorageManager()
+    }
+
+    private fun checkManageExternalStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (isManageExternalStoragePermissionGranted()) {
+                Log.d(TAG,"MANAGE_EXTERNAL_STORAGE permission granted")
+            } else {
+                Log.d(TAG,"MANAGE_EXTERNAL_STORAGE permission denied")
             }
         }
     }
 
     @Composable
     fun Greeting(name: String, modifier: Modifier = Modifier) {
-        Text(
+        /*Text(
             text = "Hello $name!",
             modifier = modifier
-        )
+        )*/
+        Column {
+            Text(
+                text = "Show location on map",
+                modifier = modifier)
+            Button(onClick = {
+
+            }) {
+                Text("Open in Google Maps")
+            }
+        }
     }
 
     @Preview(showBackground = true)
@@ -268,7 +340,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        LocationMap.removeLocationUpdate()
     }
 
 }
