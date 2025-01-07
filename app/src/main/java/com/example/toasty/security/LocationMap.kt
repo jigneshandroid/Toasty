@@ -21,10 +21,10 @@ object LocationMap {
 
     private const val TAG: String = "LocationMap"
 
-    val locations = MutableLiveData<List<String>>()
+    val locations = MutableLiveData<ArrayList<String>>()
 
     @SuppressLint("QueryPermissionsNeeded", "WrongConstant")
-    fun showLocationOnExternalMap(activity: Activity, locations: List<String>) {
+    fun showLocationOnExternalMap(activity: Activity, locations: ArrayList<String>) {
         if (locations.isEmpty()) return
 
         // Create a route query by concatenating the locations

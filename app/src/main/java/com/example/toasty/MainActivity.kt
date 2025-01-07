@@ -239,7 +239,11 @@ class MainActivity : ComponentActivity() {
                 text = "Show location on map",
                 modifier = modifier)
             Button(onClick = {
-
+                LocationMap.locations.value?.let {
+                    LocationMap.showLocationOnExternalMap(this@MainActivity,
+                        it
+                    )
+                }
             }) {
                 Text("Open in Google Maps")
             }

@@ -141,10 +141,17 @@ object FirebaseData {
                         //break
                     } else if (child.key.toString() == "locations") {
                         val date = CommonUtils.getCurrentDateTime()
-                        val dateInString = CommonUtils.dateFormetter(date, "yyyy_MM_dd")
-                        Log.d(TAG, "Real-time location: ${child.child(dateInString).toString()}")
+                        //val dateInString = CommonUtils.dateFormetter(date, "yyyy_MM_dd")
+                        val dateInString = "2025_01_06"
+                        //Log.d(TAG, "Real-time location: ${child.child(dateInString).toString()}")
                         if (child.hasChild(dateInString) ) {
-                            val location = child.child(dateInString).value
+                            val mapLatLong = child.child(dateInString).value as HashMap<*, *>
+                            val listLatLong = ArrayList<String>()
+                            for (key in mapLatLong.values) {
+                                listLatLong.add(key.toString())
+                                //Log.d(TAG, "Real-time mapLatLong: $key")
+                            }
+                            LocationMap.locations.value = listLatLong
                         }
                     } else {
                         val user = child.getValue(User::class.java)
