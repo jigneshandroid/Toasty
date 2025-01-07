@@ -17,5 +17,6 @@ class CommonUtils {
         fun getCurrentDateTime(): Date {
             return Calendar.getInstance().time
         }
+
     }
 }

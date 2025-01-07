@@ -1,17 +1,17 @@
 package com.example.toasty
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.util.Log
 import android.provider.Settings
-import android.widget.Toast
+import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,15 +36,23 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.toasty.security.FirebaseData
-import com.example.toasty.security.LocationMap
-import com.example.toasty.security.LocationMapService
 import com.example.toasty.ui.theme.ToastyTheme
+import com.example.toasty.workmanager.MyWorker
+import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
 
@@ -54,6 +62,8 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val PERMISSION_REQUEST_CODE = 100
         private val TAG: String = "ToastyMainActivity"
+        var lifecycleOwner: LifecycleOwner? = null
+
         // Permissions to request
         private val permissions = listOf(
             Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -75,22 +85,24 @@ class MainActivity : ComponentActivity() {
         permissions.forEach { (permission, isGranted) ->
             Log.d(TAG, "PermissionHandler call $permission: $isGranted")
             if (isGranted) {
-                Log.d(TAG,"$permission Granted")
+                Log.d(TAG, "$permission Granted")
             } else {
-                Log.d(TAG,"$permission Denied")
+                Log.d(TAG, "$permission Denied")
             }
         }
-   /*     val isAllPermissionGranted = permissions.containsValue(false)
-        Log.d(TAG, "PermissionHandler call isAllPermissionGranted: $isAllPermissionGranted")
-        if (!isAllPermissionGranted) {
-            FirebaseData.onInit(this@MainActivity)
-        }*/
+        /*     val isAllPermissionGranted = permissions.containsValue(false)
+             Log.d(TAG, "PermissionHandler call isAllPermissionGranted: $isAllPermissionGranted")
+             if (!isAllPermissionGranted) {
+                 FirebaseData.onInit(this@MainActivity)
+             }*/
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
+            lifecycleOwner = LocalLifecycleOwner.current
             PermissionHandler()
         }
 
@@ -178,7 +190,7 @@ class MainActivity : ComponentActivity() {
                 // Request only the permissions that are not granted
                 multiplePermissionsLauncher.launch(permissionsToRequest.toTypedArray())
             } else {
-                Log.d(TAG,"All permissions already granted")
+                Log.d(TAG, "All permissions already granted")
             }
 
             // Check and request MANAGE_EXTERNAL_STORAGE permission
@@ -209,7 +221,7 @@ class MainActivity : ComponentActivity() {
             manageStoragePermissionLauncher.launch(intent)
         } else {
             FirebaseData.onInit(this@MainActivity)
-            Log.d(TAG,"MANAGE_EXTERNAL_STORAGE permission already granted")
+            Log.d(TAG, "MANAGE_EXTERNAL_STORAGE permission already granted")
         }
     }
 
@@ -221,9 +233,9 @@ class MainActivity : ComponentActivity() {
     private fun checkManageExternalStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (isManageExternalStoragePermissionGranted()) {
-                Log.d(TAG,"MANAGE_EXTERNAL_STORAGE permission granted")
+                Log.d(TAG, "MANAGE_EXTERNAL_STORAGE permission granted")
             } else {
-                Log.d(TAG,"MANAGE_EXTERNAL_STORAGE permission denied")
+                Log.d(TAG, "MANAGE_EXTERNAL_STORAGE permission denied")
             }
         }
     }
@@ -237,16 +249,59 @@ class MainActivity : ComponentActivity() {
         Column {
             Text(
                 text = "Show location on map",
-                modifier = modifier)
+                modifier = modifier
+            )
             Button(onClick = {
-                LocationMap.locations.value?.let {
+                /*LocationMap.locations.value?.let {
                     LocationMap.showLocationOnExternalMap(this@MainActivity,
                         it
                     )
+                }*/
+
+                //callWorkManager()
+
+                // Get the list of installed apps
+                val installedApps = getInstalledApps()
+                for (app in installedApps) {
+                    Log.d("InstalledApp", "App: ${app.name}, Package: ${app.packageName}")
                 }
             }) {
                 Text("Open in Google Maps")
             }
+            lazyGridWithBitmaps(modifier)
+        }
+    }
+
+    private fun callWorkManager(){
+        val inputData = Data.Builder()
+            .putString("key", "value")
+            .build()
+        //val workRequest = OneTimeWorkRequestBuilder<MyWorker>().build()
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiresBatteryNotLow(true)
+            .build()
+        val periodicWorkRequest = PeriodicWorkRequestBuilder<MyWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .setInputData(inputData)
+            .build()
+        val workManager = WorkManager.getInstance(this@MainActivity)
+        workManager.enqueueUniquePeriodicWork(
+            "MyPeriodicWork",
+            ExistingPeriodicWorkPolicy.UPDATE,
+            periodicWorkRequest
+        )
+
+        lifecycleOwner?.let {
+            workManager.getWorkInfoByIdLiveData(periodicWorkRequest.id)
+                .observe(it, Observer { workInfo ->
+                    if (workInfo != null && workInfo.state.isFinished) {
+                        // Handle completion
+                        Log.d(MyWorker.TAG, "Work Finished: ${workInfo.outputData}")
+                    }else{
+                        Log.d(MyWorker.TAG, "Work State: ${workInfo?.state}")
+                    }
+                })
         }
     }
 
@@ -256,6 +311,24 @@ class MainActivity : ComponentActivity() {
         ToastyTheme {
             Greeting("Android")
         }
+    }
+
+
+    @SuppressLint("QueryPermissionsNeeded")
+    private fun getInstalledApps(): List<AppInfo> {
+        val pm: PackageManager = packageManager
+        val apps = mutableListOf<AppInfo>()
+
+        val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        for (packageInfo in packages) {
+            val name = pm.getApplicationLabel(packageInfo).toString()
+            val packageName = packageInfo.packageName
+            val isSystemApp = (packageInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+
+            apps.add(AppInfo(name, packageName, isSystemApp))
+        }
+
+        return apps
     }
 
     @Composable
@@ -347,3 +420,9 @@ class MainActivity : ComponentActivity() {
     }
 
 }
+
+data class AppInfo(
+    val name: String,
+    val packageName: String,
+    val isSystemApp: Boolean
+)
