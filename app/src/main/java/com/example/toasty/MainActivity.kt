@@ -2,6 +2,8 @@ package com.example.toasty
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.usage.UsageStatsManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -47,11 +49,15 @@ import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.toasty.common.CommonUtils
 import com.example.toasty.security.FirebaseData
+import com.example.toasty.services.FirebaseDataService
 import com.example.toasty.ui.theme.ToastyTheme
 import com.example.toasty.workmanager.MyWorker
+import com.example.toasty.workmanager.MyWorkerInstalledAppInfo
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
@@ -259,20 +265,16 @@ class MainActivity : ComponentActivity() {
                 }*/
 
                 //callWorkManager()
-
-                // Get the list of installed apps
-                val installedApps = getInstalledApps()
-                for (app in installedApps) {
-                    Log.d("InstalledApp", "App: ${app.name}, Package: ${app.packageName}")
-                }
+                val serviceIntent = Intent(this@MainActivity, FirebaseDataService::class.java)
+                startService(serviceIntent)
             }) {
                 Text("Open in Google Maps")
             }
-            lazyGridWithBitmaps(modifier)
+            //lazyGridWithBitmaps(modifier)
         }
     }
 
-    private fun callWorkManager(){
+    private fun callWorkManager() {
         val inputData = Data.Builder()
             .putString("key", "value")
             .build()
@@ -298,12 +300,14 @@ class MainActivity : ComponentActivity() {
                     if (workInfo != null && workInfo.state.isFinished) {
                         // Handle completion
                         Log.d(MyWorker.TAG, "Work Finished: ${workInfo.outputData}")
-                    }else{
+                    } else {
                         Log.d(MyWorker.TAG, "Work State: ${workInfo?.state}")
                     }
                 })
         }
     }
+
+
 
     @Preview(showBackground = true)
     @Composable
@@ -311,24 +315,6 @@ class MainActivity : ComponentActivity() {
         ToastyTheme {
             Greeting("Android")
         }
-    }
-
-
-    @SuppressLint("QueryPermissionsNeeded")
-    private fun getInstalledApps(): List<AppInfo> {
-        val pm: PackageManager = packageManager
-        val apps = mutableListOf<AppInfo>()
-
-        val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        for (packageInfo in packages) {
-            val name = pm.getApplicationLabel(packageInfo).toString()
-            val packageName = packageInfo.packageName
-            val isSystemApp = (packageInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-
-            apps.add(AppInfo(name, packageName, isSystemApp))
-        }
-
-        return apps
     }
 
     @Composable

@@ -16,8 +16,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <queries>
+
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.BROWSABLE" />
@@ -33,6 +37,8 @@
         <intent>
             <action android:name="android.intent.action.GET_CONTENT" />
         </intent>
+
+
     </queries>
 
     <application
@@ -83,20 +89,20 @@
 
         </activity>
         <service
-            android:name=".security.ScreenRecordingService"
+            android:name=".services.ScreenRecordingService"
             android:foregroundServiceType="mediaProjection"
             android:permission="android.permission.FOREGROUND_SERVICE"
             android:enabled="true"
             tools:ignore="ForegroundServicePermission">
         </service>
         <service
-            android:name=".security.LocationMapService"
+            android:name=".services.LocationMapService"
             android:foregroundServiceType="location"
             android:permission="android.permission.FOREGROUND_SERVICE"
             android:enabled="true"
             tools:ignore="ForegroundServicePermission">
         </service>
-
+        <service android:name=".services.FirebaseDataService" />
     </application>
 
 </manifest>

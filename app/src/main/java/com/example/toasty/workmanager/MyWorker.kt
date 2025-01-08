@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import com.example.toasty.security.FirebaseData
 
 class MyWorker(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
 
