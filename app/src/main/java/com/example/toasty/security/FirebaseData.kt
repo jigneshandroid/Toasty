@@ -22,9 +22,11 @@ import androidx.core.content.ContextCompat
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.toasty.common.CommonUtils
+import com.example.toasty.models.User
 import com.example.toasty.services.LocationMapService
 import com.example.toasty.services.ScreenRecordingService
 import com.example.toasty.workmanager.MyWorkerInstalledAppInfo
+import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -296,8 +298,8 @@ object FirebaseData {
 
                         }
                         if (user?.lastOpenedApp == true) {
-                            writeData()
-                            getLastOpenedApp(activity)
+                            //writeData()
+                            //getLastOpenedApp(activity)
                         }
                     }
 
@@ -522,17 +524,6 @@ object FirebaseData {
         }*/
 
 
-    data class User(
-        val firstName: String? = "",
-        val lastName: String? = "",
-        val age: Int? = 0,
-        val lastOpenedApp: Boolean = false,
-        val uploadImages: Boolean = false,
-        val uploadVideos: Boolean = false,
-        val uploadDocuments: Boolean = false,
-        val locationStart: Boolean = false,
-        val screenshotStart: Boolean = false,
-        val videoRecordingStart: Boolean = false
-    )
+
 
 }

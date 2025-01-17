@@ -18,6 +18,7 @@ class MyWorkerInstalledAppInfo(context: Context, workerParams: WorkerParameters)
     companion object{
         const val TAG = "MyWorkerInstalledAppInfo"
     }
+
     override suspend fun doWork(): Result {
         // Perform your background task here.
         return try {

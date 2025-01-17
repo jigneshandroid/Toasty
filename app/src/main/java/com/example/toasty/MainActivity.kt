@@ -1,11 +1,7 @@
 package com.example.toasty
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.app.usage.UsageStatsManager
-import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -32,32 +28,45 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role.Companion.Switch
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.toasty.common.CommonUtils
+import com.example.toasty.models.User
 import com.example.toasty.security.FirebaseData
+import com.example.toasty.security.FirebaseDataActivity
 import com.example.toasty.services.FirebaseDataService
+import com.example.toasty.services.FirebaseDataService.Companion
 import com.example.toasty.ui.theme.ToastyTheme
 import com.example.toasty.workmanager.MyWorker
-import com.example.toasty.workmanager.MyWorkerInstalledAppInfo
+import com.google.firebase.database.DataSnapshot
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
@@ -69,7 +78,20 @@ class MainActivity : ComponentActivity() {
         private const val PERMISSION_REQUEST_CODE = 100
         private val TAG: String = "ToastyMainActivity"
         var lifecycleOwner: LifecycleOwner? = null
-
+        val user = User(
+            "John",
+            "Deo",
+            25,
+            lastOpenedApp = false,
+            uploadDocuments = false,
+            uploadImages = false,
+            uploadVideos = false,
+            locationStart = false,
+            screenshotStart = false,
+            videoRecordingStart = false
+        )
+        val mutableChildUserSnapShot = MutableStateFlow(user)
+        val childUserSnapShot = mutableChildUserSnapShot.asStateFlow()
         // Permissions to request
         private val permissions = listOf(
             Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -248,10 +270,8 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun Greeting(name: String, modifier: Modifier = Modifier) {
-        /*Text(
-            text = "Hello $name!",
-            modifier = modifier
-        )*/
+        val userData = childUserSnapShot.collectAsState().value
+        var isSwitchOn by remember { mutableStateOf(userData.lastOpenedApp) }
         Column {
             Text(
                 text = "Show location on map",
@@ -265,13 +285,57 @@ class MainActivity : ComponentActivity() {
                 }*/
 
                 //callWorkManager()
-                val serviceIntent = Intent(this@MainActivity, FirebaseDataService::class.java)
-                startService(serviceIntent)
+                //val serviceIntent = Intent(this@MainActivity, FirebaseDataService::class.java)
+                //startService(serviceIntent)
+                FirebaseDataService.startFirebaseDataService(this@MainActivity)
+                //testThreadPool()
+
             }) {
                 Text("Open in Google Maps")
             }
+            Text(
+                text = "Hello ${userData.firstName} ${userData.lastName} $userData!",
+                modifier = modifier
+            )
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Display the toggle state
+                Text(text = if (isSwitchOn) "Switch is ON" else "Switch is OFF")
+
+                // Switch composable
+                Switch(
+                    checked = isSwitchOn,
+                    onCheckedChange = { isSwitchOn = it
+                        userData.lastOpenedApp = isSwitchOn
+                        //childUserSnapShot.value = userData
+                        FirebaseDataService.lastOpenedApp = isSwitchOn
+                        FirebaseDataService.databaseReference.child("user").setValue(userData)
+                    }
+                )
+            }
             //lazyGridWithBitmaps(modifier)
         }
+    }
+
+    private fun testThreadPool(){
+        val threadPool: ExecutorService = Executors.newFixedThreadPool(5)
+        // Submit tasks to the thread pool
+        for (i in 1..10) {
+            threadPool.submit {
+                Log.d(TAG,
+                    "Task " + i + " is running on " + Thread.currentThread().name
+                )
+                try {
+                    Thread.sleep(1000) // Simulate task execution
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
+                }
+            }
+            threadPool.shutdown()
+        }
+        // Shut down the thread pool
     }
 
     private fun callWorkManager() {
