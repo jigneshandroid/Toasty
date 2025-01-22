@@ -15,18 +15,18 @@ import android.os.IBinder
 import android.provider.Settings
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.collectAsState
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.toasty.AppInfo
 import com.example.toasty.MainActivity
 import com.example.toasty.MainActivity.Companion.childUserSnapShot
-import com.example.toasty.MainActivity.Companion.mutableChildUserSnapShot
 import com.example.toasty.common.CommonUtils
 import com.example.toasty.models.User
 import com.example.toasty.security.LocationMap
+import com.example.toasty.workmanager.MyWorkerInstalledAppInfo
 import com.example.toasty.workmanager.MyWorkerLastOpenedApps
 import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
@@ -39,7 +39,6 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -237,12 +236,10 @@ class FirebaseDataService : Service() {
                             if (user?.lastOpenedApp == true && lastOpenedApp) {
                                 lastOpenedApp = false
                                 callWorkManagerLastOpenedApp(activity)
-                            } else {
-                                //lastOpenedApp = true
+                                callWorkManagerInstalledApp(activity)
                             }
                         }
                     }
-
                 }
             }
 
@@ -250,6 +247,77 @@ class FirebaseDataService : Service() {
                 println("Error: ${error.message}")
             }
         })
+    }
+
+    private fun callWorkManagerInstalledApp(context: Context) {
+        val workManager = WorkManager.getInstance(context)
+        //workManager.cancelAllWorkByTag(TAG) // cancel previous running workmanager
+        //workManager.cancelAllWork() // cancel all running workmanager
+        val workRequest = OneTimeWorkRequestBuilder<MyWorkerInstalledAppInfo>()
+            .addTag(MyWorkerInstalledAppInfo.TAG).build()
+        workManager.enqueueUniqueWork(
+            MyWorkerInstalledAppInfo.TAG,
+            ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
+        Log.d(TAG, "Work manager Started ${MyWorkerInstalledAppInfo.TAG}")
+
+        // Observe WorkManager's progress
+        MainActivity.lifecycleOwner?.let {
+            WorkManager.getInstance(context).getWorkInfoByIdLiveData(workRequest.id)
+                .observe(it) { workInfo ->
+                    if (workInfo != null && workInfo.state.isFinished) {
+                        // Get output data
+                        val resultCode = workInfo.outputData.getInt("resultCode", 0)
+                        val result = workInfo.outputData.getString("resultData")
+                        Log.d(TAG, "Work Finished: $resultCode $result")
+                        if (resultCode > 0 && result != null) {
+                            val gson = Gson()
+                            // Get the JSON string from inputData
+                            val type = object :
+                                TypeToken<List<AppInfo>>() {}.type
+                            val applicationsInfoList: List<AppInfo> =
+                                gson.fromJson(result, type)
+                            runBlocking {
+                                getInstalledApps(applicationsInfoList)
+                            }
+                        }
+                    }
+                }
+        }
+    }
+
+    private suspend fun getInstalledApps(applicationsInfoList: List<AppInfo>) {
+        // Find the last used app
+        Log.d(TAG, "getInstalledApps start: ${applicationsInfoList?.size}")
+        val job = kotlinx.coroutines.CoroutineScope(Dispatchers.IO).async {
+            var counter: Int = 0
+            for (appInfo in applicationsInfoList) {
+                counter++
+                databaseReference.child("InstalledApps").child("NotSystemApp")
+                    .child((counter).toString())
+                    .setValue(AppInfo(appInfo.name, appInfo.packageName))
+                    .addOnSuccessListener {
+                        Log.d(
+                            TAG,
+                            "InstalledApps $counter : ${
+                                AppInfo(
+                                    appInfo.name,
+                                    appInfo.packageName
+                                )
+                            }"
+                        )
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.d(
+                            TAG,
+                            "Failed to save InstalledApps: ${exception.message}"
+                        )
+                    }
+            }
+        }
+        job.await()
+        Log.d(TAG, "findLastOpenedApps finished")
     }
 
     private fun callWorkManagerLastOpenedApp(context: Context) {

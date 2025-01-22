@@ -1,6 +1,7 @@
 package com.example.toasty
 
 import android.Manifest
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -19,13 +20,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -45,8 +49,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role.Companion.Switch
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import kotlin.reflect.full.memberProperties
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.work.Constraints
@@ -55,11 +63,13 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.toasty.common.CommonUtils
 import com.example.toasty.models.User
 import com.example.toasty.security.FirebaseData
 import com.example.toasty.security.FirebaseDataActivity
 import com.example.toasty.services.FirebaseDataService
 import com.example.toasty.services.FirebaseDataService.Companion
+import com.example.toasty.services.ScreenRecordingService.Companion.NOTIFICATION_ID
 import com.example.toasty.ui.theme.ToastyTheme
 import com.example.toasty.workmanager.MyWorker
 import com.google.firebase.database.DataSnapshot
@@ -69,6 +79,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
+import kotlin.reflect.KMutableProperty
 
 
 class MainActivity : ComponentActivity() {
@@ -271,10 +282,10 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun Greeting(name: String, modifier: Modifier = Modifier) {
         val userData = childUserSnapShot.collectAsState().value
-        var isSwitchOn by remember { mutableStateOf(userData.lastOpenedApp) }
-        Column {
+        val deviceInfo = CommonUtils.getDeviceInfo(this@MainActivity)
+        Column (Modifier.padding(0.dp, 50.dp)) {
             Text(
-                text = "Show location on map",
+                text = "Show location on map $deviceInfo",
                 modifier = modifier
             )
             Button(onClick = {
@@ -287,39 +298,102 @@ class MainActivity : ComponentActivity() {
                 //callWorkManager()
                 //val serviceIntent = Intent(this@MainActivity, FirebaseDataService::class.java)
                 //startService(serviceIntent)
-                FirebaseDataService.startFirebaseDataService(this@MainActivity)
+                //FirebaseDataService.startFirebaseDataService(this@MainActivity)
                 //testThreadPool()
+                pendingIntent()
 
             }) {
                 Text("Open in Google Maps")
             }
-            Text(
-                text = "Hello ${userData.firstName} ${userData.lastName} $userData!",
-                modifier = modifier
-            )
+            val scrollState = rememberScrollState()
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp).verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Display the toggle state
-                Text(text = if (isSwitchOn) "Switch is ON" else "Switch is OFF")
+                //val numberOfKeys = User::class.memberProperties.size
+                val properties = User::class.memberProperties
+                properties.forEachIndexed  { index, property ->
+                    val key = property.name
+                    val value = property.getter.call(userData)
+                    Text(
+                        text = "$key: $value"
+                    )
+                    if(value is Boolean) {
+                        var isSwitchOn by remember { mutableStateOf(value) }
+                        Row(Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Display the toggle state
+                            Text(
+                                text = if (isSwitchOn) "Switch is ON" else "Switch is OFF",
+                                modifier = Modifier.padding(0.dp, 5.dp)
+                            )
 
-                // Switch composable
-                Switch(
-                    checked = isSwitchOn,
-                    onCheckedChange = { isSwitchOn = it
-                        userData.lastOpenedApp = isSwitchOn
-                        //childUserSnapShot.value = userData
-                        FirebaseDataService.lastOpenedApp = isSwitchOn
-                        FirebaseDataService.databaseReference.child("user").setValue(userData)
+                            // Switch composable
+                            Switch(
+                                checked = isSwitchOn,
+                                onCheckedChange = { site ->
+                                    isSwitchOn = site
+                                    //userData.lastOpenedApp = isSwitchOn
+                                    val modelKey = userData::class.memberProperties.find { it.name == key }
+
+                                    // Check if the property is mutable (var), and if it is, set the value
+                                    if (modelKey is KMutableProperty<*>) {
+                                        modelKey.setter.call(mutableChildUserSnapShot, isSwitchOn) // Set the value dynamically
+                                    } else {
+                                        Log.d(TAG,"Property $modelKey is not mutable!")
+                                    }
+                                    //childUserSnapShot.value = userData
+                                    FirebaseDataService.lastOpenedApp = isSwitchOn
+                                    FirebaseDataService.databaseReference.child("user")
+                                        .setValue(userData)
+                                }
+                            )
+                        }
                     }
-                )
+                }
             }
             //lazyGridWithBitmaps(modifier)
         }
     }
 
-    private fun testThreadPool(){
+    private fun pendingIntent(){
+        val intent = Intent(this@MainActivity, ChatGpyActivity::class.java)
+
+// Wrap the intent in a PendingIntent
+        val pendingIntent = PendingIntent.getActivity(
+            this@MainActivity,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+// Use the PendingIntent in a notification
+        val notification = NotificationCompat.Builder(this@MainActivity, "CHANNEL_ID")
+            .setContentTitle("Notification Title")
+            .setContentText("Notification Content")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(pendingIntent) // Triggered when notification is clicked
+            .build()
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
+        NotificationManagerCompat.from(this@MainActivity).notify(NOTIFICATION_ID, notification)
+    }
+
+    /*private fun testThreadPool(){
         val threadPool: ExecutorService = Executors.newFixedThreadPool(5)
         // Submit tasks to the thread pool
         for (i in 1..10) {
@@ -336,9 +410,9 @@ class MainActivity : ComponentActivity() {
             threadPool.shutdown()
         }
         // Shut down the thread pool
-    }
+    }*/
 
-    private fun callWorkManager() {
+    /*private fun callWorkManager() {
         val inputData = Data.Builder()
             .putString("key", "value")
             .build()
@@ -369,7 +443,7 @@ class MainActivity : ComponentActivity() {
                     }
                 })
         }
-    }
+    }*/
 
 
 
@@ -473,6 +547,5 @@ class MainActivity : ComponentActivity() {
 
 data class AppInfo(
     val name: String,
-    val packageName: String,
-    val isSystemApp: Boolean
+    val packageName: String
 )

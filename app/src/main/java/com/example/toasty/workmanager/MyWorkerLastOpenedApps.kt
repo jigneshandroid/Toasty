@@ -78,23 +78,6 @@ class MyWorkerLastOpenedApps(context: Context, workerParams: WorkerParameters) :
         context.startActivity(intent)
     }
 
-    private fun callWorkManagerInstalledApp(context: Context){
-        // Enqueue the WorkRequest
-        val workRequest = OneTimeWorkRequestBuilder<MyWorkerInstalledAppInfo>().build()
-        WorkManager.getInstance(context).enqueue(workRequest)
-
-        // Observe WorkManager's progress
-        /*    WorkManager.getInstance(context).getWorkInfoByIdLiveData(workRequest.id)
-                .observe(context) { workInfo ->
-                    if (workInfo != null && workInfo.state.isFinished) {
-                        // Get output data
-                        val result = workInfo.outputData.getString("result")
-                        Log.d(MyWorkerInstalledAppInfo.TAG, "Work Finished: $result")
-                        //Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
-                    }
-                }*/
-    }
-
     private fun findLastOpenedApps(usageStatsList: List<UsageStats>): ArrayList<Triple<String?, String?, String?>>{
         // Find the last used app
         val lastUsedApp: ArrayList<Triple<String?, String?, String?>> = ArrayList<Triple<String?, String?, String?>>()
