@@ -5,8 +5,12 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import com.example.toasty.databinding.ActivityLearnKotlinBinding
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 
 class ActivityLearnKotlin : AppCompatActivity() {
@@ -20,7 +24,13 @@ class ActivityLearnKotlin : AppCompatActivity() {
         handleCoroutineException()
     }
 
-    private fun handleCoroutineException() = runBlocking {
+    private fun handleCoroutineException() {
+        //handleCoroutineExceptionTryCatch()
+        //handleCoroutineExceptionHandler()
+        handleCoroutineExceptionsupervisorScope()
+    }
+
+    private fun handleCoroutineExceptionTryCatch() = runBlocking {
         try {
             val result = withContext(Dispatchers.IO) {
                 // Simulate an exception
@@ -31,4 +41,37 @@ class ActivityLearnKotlin : AppCompatActivity() {
             Log.d(TAG,"Caught exception: ${e.message}")
         }
     }
+
+    private fun handleCoroutineExceptionHandler() = runBlocking {
+        // Define a CoroutineExceptionHandler
+        val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+            Log.d(TAG,"Caught exception in CoroutineExceptionHandler: ${exception.message}")
+        }
+
+        val job = launch(exceptionHandler) {
+            // Simulate an exception
+            throw ArithmeticException("An error occurred!")
+        }
+        job.join()
+    }
+
+    private fun handleCoroutineExceptionsupervisorScope() = runBlocking {
+        supervisorScope {
+            val job1 = launch {
+                Log.d(TAG,"Job1 started")
+                throw RuntimeException("Job1 failed!")
+            }
+
+            val job2 = launch {
+                Log.d(TAG,"Job2 started")
+                delay(1000)
+                Log.d(TAG,"Job2 completed")
+            }
+
+            job1.join()
+            job2.join()
+        }
+        Log.d(TAG,"SupervisorScope completed")
+    }
+
 }
