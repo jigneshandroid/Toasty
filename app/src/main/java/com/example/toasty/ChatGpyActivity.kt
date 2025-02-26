@@ -34,7 +34,7 @@ class ChatGpyActivity : AppCompatActivity() {
     private fun fetchResponse(message: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = ApiClient.chatApi.sendMessage(
+   /*             val response = ApiClient.chatApi.sendMessage(
                     ChatRequest(
                         messages = listOf(Message("user", message))
                     )
@@ -43,7 +43,7 @@ class ChatGpyActivity : AppCompatActivity() {
 
                 runOnUiThread {
                     mBinding.responseText.text = aiResponse
-                }
+                }*/
             } catch (e: Exception) {
                 e.printStackTrace()
                 runOnUiThread {
