@@ -1,4 +1,4 @@
-package com.example.toasty.room
+package com.example.toasty.remotemediator
 
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
@@ -8,6 +8,7 @@ import androidx.room.withTransaction
 import com.example.toasty.interfaces.ApiService
 import com.example.toasty.models.TestItem
 import com.example.toasty.models.TestItemKey
+import com.example.toasty.room.TestItemDatabase
 
 @OptIn(ExperimentalPagingApi::class)
 class TestItemRemoteMediator(
