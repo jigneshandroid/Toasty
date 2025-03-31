@@ -18,6 +18,11 @@ pagingCommonAndroid = "3.3.6"
 roomKtx = "2.6.1"
 roomRuntime = "2.6.1"
 monitor = "1.7.2"
+sceneformUx = "1.17.1"
+tensorflowLite = "2.12.0"
+tensorflowLiteTaskVision = "2.12.0"
+tensorflowLiteSupport = "0.1.0"
+tensorflowLiteMetadata = "0.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -44,6 +49,7 @@ play-services-location = { group = "com.google.android.gms", name = "play-servic
 androidx-room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
 androidx-paging-common-android = { group = "androidx.paging", name = "paging-common-android", version.ref = "pagingCommonAndroid" }
 androidx-monitor = { group = "androidx.test", name = "monitor", version.ref = "monitor" }
+sceneform-ux = { group = "com.google.ar.sceneform.ux", name = "sceneform-ux", version.ref = "sceneformUx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

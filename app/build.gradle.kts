@@ -42,6 +42,7 @@ android {
         compose = true
         viewBinding = true
         dataBinding = true
+        mlModelBinding = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -51,8 +52,9 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-
-
+    configurations.all {
+        exclude("com.google.flatbuffers","flatbuffers-java")
+    }
 }
 
 
@@ -74,6 +76,7 @@ dependencies {
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.paging.common.android)
     implementation(libs.androidx.monitor)
+    implementation(libs.sceneform.ux)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -81,7 +84,16 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    // TensorFLow
+    implementation ("org.tensorflow:tensorflow-lite:2.13.0")
+    implementation ("org.tensorflow:tensorflow-lite-task-vision:0.4.3")
+    implementation ("org.tensorflow:tensorflow-lite-support:0.4.3")
+    implementation ("org.tensorflow:tensorflow-lite-metadata:0.1.0-rc2")
     implementation ("androidx.paging:paging-runtime-ktx:3.2.1")
+    implementation ("com.google.ar:core:1.48.0")
+    implementation ("com.google.ar.sceneform:assets:1.17.1")
+    implementation ("com.google.android.gms:play-services-maps:18.1.0")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.5.1")
     implementation ("androidx.paging:paging-compose:3.2.1")
     implementation ("androidx.navigation:navigation-compose:2.8.9")
@@ -105,4 +117,10 @@ dependencies {
     implementation ("androidx.room:room-ktx:2.6.1")
     implementation ("androidx.room:room-paging:2.6.1")
     kapt ("androidx.room:room-compiler:2.6.1")
+    // CameraX dependencies
+    implementation ("androidx.camera:camera-core:1.2.2")
+    implementation ("androidx.camera:camera-camera2:1.2.2")
+    implementation ("androidx.camera:camera-lifecycle:1.2.2")
+    implementation ("androidx.camera:camera-view:1.2.2")
+
 }
