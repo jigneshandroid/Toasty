@@ -70,39 +70,40 @@
         <activity
             android:name=".MainInitActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.AppCompat.Light">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER"/>
-
             </intent-filter>
-
         </activity>
         <activity
-            android:name=".ActivityLearnKotlin"
+            android:name=".activities.ChatGpyActivity"
             android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.AppCompat.Light">
-<!--            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER"/>
-
-            </intent-filter>-->
-
-        </activity>
+            android:theme="@style/Theme.AppCompat.Light"/>
         <activity
-            android:name=".security.FirebaseDataActivity"
+            android:name=".activities.ActivityLearnKotlin"
             android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.AppCompat.Light">
-<!--            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER"/>
-
-            </intent-filter>-->
-
-        </activity>
+            android:theme="@style/Theme.AppCompat.Light"/>
+        <activity
+            android:name=".activities.ActivityMap"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light"/>
+        <activity
+            android:name=".activities.ComposeTestActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light"/>
+        <activity
+            android:name=".activities.RemoteMediatorActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light"/>
+        <activity
+            android:name=".arcore.LoadArDatabase"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light"/>
+        <activity
+            android:name=".tensorflow.ActivityTensorFlowDetectObject"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light"/>
         <service
             android:name=".services.ScreenRecordingService"
             android:foregroundServiceType="mediaProjection"

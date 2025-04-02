@@ -12,6 +12,7 @@ composeBom = "2024.04.01"
 appcompat = "1.7.0"
 material = "1.12.0"
 firebaseStorageKtx = "21.0.1"
+opencvAndroid = "4.5.1"
 playServicesLocation = "21.3.0"
 roomCommon = "2.6.1"
 pagingCommonAndroid = "3.3.6"
@@ -20,9 +21,13 @@ roomRuntime = "2.6.1"
 monitor = "1.7.2"
 sceneformUx = "1.17.1"
 tensorflowLite = "2.12.0"
+tensorflowLiteMetadataVersion = "0.1.0"
+tensorflowLiteSupportVersion = "0.4.3"
 tensorflowLiteTaskVision = "2.12.0"
 tensorflowLiteSupport = "0.1.0"
 tensorflowLiteMetadata = "0.1.0"
+tensorflowLiteTaskVisionVersion = "0.4.3"
+tensorflowLiteVersion = "2.13.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -45,11 +50,16 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
+opencv-android = { module = "org.opencv:opencv-android", version.ref = "opencvAndroid" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 androidx-room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
 androidx-paging-common-android = { group = "androidx.paging", name = "paging-common-android", version.ref = "pagingCommonAndroid" }
 androidx-monitor = { group = "androidx.test", name = "monitor", version.ref = "monitor" }
 sceneform-ux = { group = "com.google.ar.sceneform.ux", name = "sceneform-ux", version.ref = "sceneformUx" }
+tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLiteVersion" }
+tensorflow-lite-metadata = { module = "org.tensorflow:tensorflow-lite-metadata", version.ref = "tensorflowLiteMetadataVersion" }
+tensorflow-lite-support = { module = "org.tensorflow:tensorflow-lite-support", version.ref = "tensorflowLiteSupportVersion" }
+tensorflow-lite-task-vision = { module = "org.tensorflow:tensorflow-lite-task-vision", version.ref = "tensorflowLiteTaskVisionVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

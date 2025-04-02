@@ -1,4 +1,4 @@
-package com.example.toasty
+package com.example.toasty.activities
 
 import android.os.Bundle
 import android.util.Log
@@ -18,12 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.toasty.models.Product
-import com.example.toasty.viewmodel.UserViewModel
-import com.example.toasty.repository.TestUserRepository
-import com.example.toasty.models.TestUser
 import com.example.toasty.repository.ProductListRepository
 import com.example.toasty.room.ProductListDatabase
-import com.example.toasty.room.TestUserDatabase
 import com.example.toasty.viewmodel.ProductViewModel
 import com.jigs.chatgptdemo.network.ApiClient
 

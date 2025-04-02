@@ -1,4 +1,4 @@
-package com.example.toasty
+package com.example.toasty.activities
 
 import android.Manifest
 import android.app.PendingIntent
@@ -46,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role.Companion.Switch
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -54,30 +53,16 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.example.toasty.R
 import kotlin.reflect.full.memberProperties
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
-import androidx.work.Constraints
-import androidx.work.Data
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.toasty.common.CommonUtils
 import com.example.toasty.models.User
 import com.example.toasty.security.FirebaseData
-import com.example.toasty.security.FirebaseDataActivity
 import com.example.toasty.services.FirebaseDataService
-import com.example.toasty.services.FirebaseDataService.Companion
 import com.example.toasty.services.ScreenRecordingService.Companion.NOTIFICATION_ID
 import com.example.toasty.ui.theme.ToastyTheme
-import com.example.toasty.workmanager.MyWorker
-import com.google.firebase.database.DataSnapshot
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.reflect.KMutableProperty
 

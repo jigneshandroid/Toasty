@@ -8,7 +8,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
-import com.example.toasty.AppInfo
+import com.example.toasty.activities.AppInfo
 import com.google.gson.Gson
 
 class MyWorkerInstalledAppInfo(context: Context, workerParams: WorkerParameters) :

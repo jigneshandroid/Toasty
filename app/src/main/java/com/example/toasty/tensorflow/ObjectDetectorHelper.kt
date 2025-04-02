@@ -40,12 +40,13 @@ class ObjectDetectorHelper(private val context: Context) {
     }
 
     fun detectObjectsResult(bitmap: Bitmap): List<DetectionResult> {
-        val image = TensorImage.fromBitmap(bitmap)
-        val tensorImage = TensorImage.createFrom(image, DataType.FLOAT32)
+        //val image = TensorImage.fromBitmap(bitmap)
+        val tensorImage = TensorImage(DataType.FLOAT32)
+        tensorImage.load(bitmap)
         // Normalize image to range [0, 1]
         val imageProcessor = ImageProcessor.Builder()
             .add(ResizeOp(300, 300, ResizeOp.ResizeMethod.BILINEAR)) // Resize to model's expected input size
-            .add(NormalizeOp(0f, 255f)) // Normalize pixels: (pixel - mean) / stddev
+            .add(NormalizeOp(0f, 1f)) // Normalize pixels: (pixel - mean) / stddev
             .build()
 
         val processedImage = imageProcessor.process(tensorImage)

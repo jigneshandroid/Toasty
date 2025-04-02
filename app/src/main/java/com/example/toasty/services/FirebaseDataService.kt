@@ -20,9 +20,9 @@ import androidx.core.content.ContextCompat
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.toasty.AppInfo
-import com.example.toasty.MainActivity
-import com.example.toasty.MainActivity.Companion.childUserSnapShot
+import com.example.toasty.activities.AppInfo
+import com.example.toasty.activities.MainActivity
+import com.example.toasty.activities.MainActivity.Companion.childUserSnapShot
 import com.example.toasty.common.CommonUtils
 import com.example.toasty.models.User
 import com.example.toasty.security.LocationMap

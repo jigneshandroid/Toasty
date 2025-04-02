@@ -1,4 +1,4 @@
-package com.example.toasty
+package com.example.toasty.activities
 
 import android.os.Bundle
 import android.util.Log
@@ -10,16 +10,12 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.LifecycleCoroutineScope
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
+import com.example.toasty.R
 import com.example.toasty.databinding.ActivityLearnKotlinBinding
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,7 +49,9 @@ class ActivityLearnKotlin : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //setContentView(R.layout.activity_main)
-        mBinding = DataBindingUtil.setContentView(this@ActivityLearnKotlin, R.layout.activity_learn_kotlin)
+        mBinding = DataBindingUtil.setContentView(this@ActivityLearnKotlin,
+            R.layout.activity_learn_kotlin
+        )
         //handleCoroutineException()
         CoroutineScope(Dispatchers.IO).launch {
             fetchNumbers().collect { value ->
